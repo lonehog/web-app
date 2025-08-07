@@ -32,5 +32,28 @@ function migrate() {
 
 module.exports = {
   db: connect(),
-  migrate
+  migrate,
+  // lightweight promise-like wrappers used elsewhere
+  get: (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const database = connect();
+        const result = database.prepare(sql).get(...params);
+        resolve(result);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  },
+  run: (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const database = connect();
+        database.prepare(sql).run(...params);
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
 };

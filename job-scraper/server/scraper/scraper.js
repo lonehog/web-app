@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const { DateTime, Duration } = require('luxon');
 const { db } = require('../db');
+const dbApi = require('../db');
 
 const ZONE = 'Europe/Berlin';
 
@@ -161,6 +162,22 @@ function purgeOld() {
   db.prepare('DELETE FROM Job WHERE scrape_time < ?').run(threshold);
 }
 
+/**
+ * Persistent metrics helpers
+ */
+async function incTotal(n = 1) {
+  try { await dbApi.run('UPDATE metrics SET total_requests = total_requests + ? WHERE id=1', [n]); }
+  catch (e) { console.error('[metrics] incTotal failed', e); }
+}
+async function incSuccess(n = 1) {
+  try { await dbApi.run('UPDATE metrics SET success_count = success_count + ? WHERE id=1', [n]); }
+  catch (e) { console.error('[metrics] incSuccess failed', e); }
+}
+async function incFailure(n = 1) {
+  try { await dbApi.run('UPDATE metrics SET failure_count = failure_count + ? WHERE id=1', [n]); }
+  catch (e) { console.error('[metrics] incFailure failed', e); }
+}
+
 async function runScrapeOnce() {
   const portals = db.prepare('SELECT id, provider, location FROM PortalConfig').all();
   const keywords = db.prepare('SELECT id, portalConfigId, term FROM Keyword').all();
@@ -186,14 +203,19 @@ async function runScrapeOnce() {
         };
         if (hasCreds) headers.Cookie = cookieHeader;
 
+        // Count the outbound API request
+        await incTotal(1);
+
         const resp = await fetch(url, {
           headers,
           timeout: 20000
         });
         if (!resp.ok) {
           console.error(`[scraper] Fetch failed ${resp.status} for ${url} (creds: ${hasCreds ? 'yes' : 'no'})`);
+          await incFailure(1);
           continue;
         }
+        await incSuccess(1);
         const html = await resp.text();
         const parsed = extractJobsFromHTML(html, term);
         for (const j of parsed) {
@@ -202,6 +224,7 @@ async function runScrapeOnce() {
         console.log(`[scraper] LinkedIn (1h) "${term}" @ ${p.location} => inserted ${parsed.length}`);
       } catch (e) {
         console.error(`[scraper] Error scraping ${url}`, e && e.message ? e.message : e);
+        await incFailure(1);
       }
     }
   }
