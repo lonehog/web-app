@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: job-scraper-app
+    environment:
+      - NODE_ENV=production
+      - TZ=Europe/Berlin
+      # Set these on first run if you want non-interactive admin creation:
+      # - FIRST_USER_USERNAME=admin
+      # - FIRST_USER_PASSWORD=change_me
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
