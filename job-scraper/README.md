@@ -8,6 +8,7 @@ A full-stack job-scraping web application.
 - Auth: Single-user signup first, then login (JWT in HTTP-only cookie)
 - Scheduler: Cron inside Docker (runs hourly)
 - Time Zone: Europe/Berlin for all timestamps
+- Providers: LinkedIn, Glassdoor and Stepstone
 
 ## Quick Start (Docker)
 
@@ -57,7 +58,7 @@ Client: http://localhost:5173 (proxied /api to 3000)
 - User(id, username UNIQUE, password_hash)
 - PortalConfig(id, provider, location)
 - Keyword(id, portalConfigId FK→PortalConfig, term)
-- Job(id, portal, keyword, title, company, location, description_snippet, posting_time, scrape_time, is_repeat)
+- Job(id, portal, keyword, title, company, location, url, description_snippet, posting_time, scrape_time, is_repeat)
 - Indexes on posting_time, scrape_time, and dedupe composite
 
 ## API
@@ -83,5 +84,5 @@ All endpoints require auth (except signup/login).
 
 ## Notes
 
-- LinkedIn markup may change; scraper is best-effort with resilient selectors and logging.
+- LinkedIn, Glassdoor and Stepstone markup may change; scraper is best-effort with resilient selectors and logging.
 - For detached first-run, define FIRST_USER_USERNAME and FIRST_USER_PASSWORD to avoid prompt.

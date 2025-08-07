@@ -1,0 +1,2 @@
+ALTER TABLE Job ADD COLUMN url TEXT;
+CREATE INDEX IF NOT EXISTS idx_job_url ON Job(url);

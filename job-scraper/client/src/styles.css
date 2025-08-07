@@ -1,40 +1,41 @@
 /* Light theme (default) */
+
 :root {
-  --bg: #ffffff;
-  --panel: #f8fafb;
-  --panel-2: #eef2f5;
-  --text: #0b1215;
-  --muted: #4b5b66;
-  --primary: #16a34a; /* green-600 */
-  --accent: #16a34a;
+  --bg: #f8fafc;
+  --panel: #ffffff;
+  --panel-2: #f1f5f9;
+  --text: #0f172a;
+  --muted: #475569;
+  --primary: #3b82f6; /* blue-500 */
+  --accent: #3b82f6;
   --warn: #f59e0b;
   --danger: #ef4444;
   --card: #ffffff;
 
   /* Gradients and shadows */
-  --accent-grad: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #0e7a3a 100%);
-  --bg-grad: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+  --accent-grad: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%);
+  --bg-grad: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
   --shadow-1: 0 1px 2px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08);
-  --border: #e6edf1;
+  --border: #e2e8f0;
 }
 
 /* Dark theme */
 :root[data-theme="dark"] {
-  --bg: #0b1215;
-  --panel: #111b20;
-  --panel-2: #152229;
-  --text: #e6edf1;
-  --muted: #9fb0ba;
-  --primary: #22c55e; /* slight luminosity boost */
-  --accent: #22c55e;
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel-2: #334155;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --primary: #60a5fa;
+  --accent: #60a5fa;
   --warn: #f59e0b;
   --danger: #ef4444;
-  --card: #0e171c;
+  --card: #1e293b;
 
-  --accent-grad: linear-gradient(135deg, #34d399 0%, #22c55e 50%, #16a34a 100%);
+  --accent-grad: linear-gradient(135deg, #93c5fd 0%, #60a5fa 50%, #3b82f6 100%);
   --bg-grad: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   --shadow-1: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
-  --border: #1f2a30;
+  --border: #334155;
 }
 
 * { box-sizing: border-box; }
@@ -198,27 +199,64 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 }
 
 .job-group {
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 .job-group h3 {
-  margin: 8px 0;
+  margin: 8px 0 12px;
   font-size: 16px;
   color: var(--muted);
   font-weight: 600;
 }
-.job {
-  border: 1px solid rgba(148,163,184,.15);
-  background: rgba(2,6,23,0.4);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
+
+.job-card {
+  display: block;
+  background: linear-gradient(180deg, var(--card), color-mix(in oklab, var(--panel) 70%, transparent));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-1);
+  transition: transform .05s ease, box-shadow .1s ease;
+  color: var(--text);
+  text-decoration: none;
 }
-.job.repeat {
-  border-color: var(--warn);
-  box-shadow: 0 0 0 1px var(--warn) inset;
+.job-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-.job .title { font-weight: 600; }
-.job .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.job-card .title {
+  font-weight: 600;
+  font-size: 15px;
+}
+.job-card .company {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.job-card .snippet {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+.job-card .meta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.badge.portal {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
 
 .controls {
   display: flex;
