@@ -27,11 +27,11 @@ function buildLinkedInCookieHeader(data) {
 }
 
 // Build LinkedIn search URL with recencyHours (1 -> r3600, 24 -> r86400)
-function buildLinkedInURL(term, location) {
+function buildLinkedInURL(term, location, recencyHours = 1) {
   const q = encodeURIComponent(term);
   const loc = encodeURIComponent(location);
-  // Force last hour only
-  return `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${loc}&f_TPR=r3600`;
+  const recencyParam = recencyHours === 24 ? "r86400" : "r3600";
+  return `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${loc}&f_TPR=${recencyParam}`;
 }
 
 function nowBerlin() {
@@ -190,12 +190,13 @@ async function runScrapeOnce() {
   const liCred = loadProviderCredentials('LinkedIn');
   const cookieHeader = buildLinkedInCookieHeader(liCred.data);
   const hasCreds = cookieHeader.length > 0;
+  const recencyHours = liCred.recencyHours;
 
   for (const p of portals) {
     const terms = keywordsByPortal[p.id] || [];
     if (p.provider !== 'LinkedIn') continue; // currently only LinkedIn supported
     for (const term of terms) {
-      const url = buildLinkedInURL(term, p.location);
+        const url = buildLinkedInURL(term, p.location, recencyHours);
       try {
         const headers = {
           'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36',
@@ -221,7 +222,7 @@ async function runScrapeOnce() {
         for (const j of parsed) {
           insertJob(j);
         }
-        console.log(`[scraper] LinkedIn (1h) "${term}" @ ${p.location} => inserted ${parsed.length}`);
+        console.log(`[scraper] LinkedIn (${recencyHours}h) "${term}" @ ${p.location} => inserted ${parsed.length}`);
       } catch (e) {
         console.error(`[scraper] Error scraping ${url}`, e && e.message ? e.message : e);
         await incFailure(1);
