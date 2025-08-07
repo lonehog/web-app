@@ -5,7 +5,6 @@ import App from './App.jsx';
 import Home from './pages/Home.jsx';
 import Portals from './pages/Portals.jsx';
 import Jobs from './pages/Jobs.jsx';
-import Credentials from './pages/Credentials.jsx';
 import './styles.css';
 import { ThemeProvider } from './components/ThemeProvider.jsx';
 
@@ -20,7 +19,6 @@ root.render(
             <Route index element={<Home />} />
             <Route path="/portals" element={<Portals />} />
             <Route path="/jobs" element={<Jobs />} />
-            <Route path="/credentials" element={<Credentials />} />
           </Route>
         </Routes>
       </BrowserRouter>

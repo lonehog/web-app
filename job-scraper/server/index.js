@@ -10,7 +10,6 @@ const { migrate, db } = require('./db');
 const homeRoutes = require('./routes/home');
 const portalRoutes = require('./routes/portal');
 const jobsRoutes = require('./routes/jobs');
-const credentialsRoutes = require('./routes/credentials');
 const cronManager = require('./cronManager');
 const cronRoutes = require('./routes/cron');
 const metricsRoutes = require('./routes/metrics');
@@ -34,7 +33,6 @@ function createApp() {
   app.use('/api/home', homeRoutes);
   app.use('/api/portal', portalRoutes);
   app.use('/api/jobs', jobsRoutes);
-  app.use('/api/credentials', credentialsRoutes);
   app.use('/api/cron', cronRoutes);
   app.use('/api/metrics', metricsRoutes);
 
