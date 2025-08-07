@@ -76,6 +76,8 @@ export default function Portals() {
               onChange={e => setForm({ ...form, provider: e.target.value })}
             >
               <option value="LinkedIn">LinkedIn</option>
+              <option value="Glassdoor">Glassdoor</option>
+              <option value="Stepstone">Stepstone</option>
             </select>
           </div>
           <div className="field">

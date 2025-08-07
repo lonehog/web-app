@@ -74,21 +74,18 @@ export default function Jobs() {
   }
 
   function mergeGroups(prev, next) {
-    // Merge by hourLabel while preserving order (descending by time as delivered)
-    const map = new Map(prev.map(g => [g.hourLabel, { ...g }]));
+    // Merge by hourLabel while preserving order and avoiding duplicate job IDs
+    const seen = new Set();
+    prev.forEach(g => g.jobs.forEach(j => seen.add(j.id)));
+    const all = [...prev.map(g => ({ ...g, jobs: [...g.jobs] }))];
     for (const g of next) {
-      if (map.has(g.hourLabel)) {
-        const merged = map.get(g.hourLabel);
-        merged.jobs = [...merged.jobs, ...g.jobs];
-        map.set(g.hourLabel, merged);
-      } else {
-        map.set(g.hourLabel, g);
-      }
+      const fresh = g.jobs.filter(j => !seen.has(j.id));
+      fresh.forEach(j => seen.add(j.id));
+      const existing = all.find(x => x.hourLabel === g.hourLabel);
+      if (existing) existing.jobs = [...existing.jobs, ...fresh];
+      else all.push({ hourLabel: g.hourLabel, jobs: fresh });
     }
-    // Preserve the order: prev order then any new groups appended
-    const existingLabels = prev.map(g => g.hourLabel);
-    const newOnes = next.filter(g => !existingLabels.includes(g.hourLabel));
-    return [...prev.map(l => map.get(l.hourLabel)), ...newOnes];
+    return all;
   }
 
   function formatISOToLabel(iso) {
@@ -139,15 +136,17 @@ export default function Jobs() {
           <section key={g.hourLabel} className="job-group">
             <h3>{g.hourLabel}</h3>
             {g.jobs.map(j => (
-              <div key={j.id} className={`job ${j.is_repeat ? 'repeat' : ''}`}>
-                <div className="title">{j.title}</div>
-                <div className="small">{j.company || 'Unknown company'} — {j.location || 'Unknown location'} — {j.portal}</div>
+              <a key={j.id} href={j.url || '#'} target="_blank" rel="noopener" className="job-card">
+                <div className="job-header">
+                  <div className="title">{j.title}</div>
+                  <span className="badge portal">{j.portal}</span>
+                </div>
+                <div className="company">{j.company || 'Unknown company'} — {j.location || 'Unknown location'}</div>
+                {j.description_snippet && <div className="snippet">{j.description_snippet}</div>}
                 <div className="meta">
                   Posting: {formatISOToLabel(j.posting_time)} | Scraped: {formatISOToLabel(j.scrape_time)}
-                  {j.is_repeat ? ' • Repeat' : ''}
                 </div>
-                {j.description_snippet && <div className="small" style={{ marginTop: 4 }}>{j.description_snippet}</div>}
-              </div>
+              </a>
             ))}
           </section>
         ))}

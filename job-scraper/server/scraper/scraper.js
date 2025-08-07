@@ -14,6 +14,22 @@ function buildLinkedInURL(term, location, recencyHours = 1) {
   return `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${loc}&f_TPR=${recencyParam}`;
 }
 
+// Build Glassdoor search URL using a basic query string
+function buildGlassdoorURL(term, location, recencyHours = 24) {
+  const q = encodeURIComponent(term);
+  const loc = encodeURIComponent(location);
+  const fromAge = recencyHours <= 24 ? 1 : 7; // Glassdoor allows filtering by days
+  return `https://www.glassdoor.com/Job/jobs.htm?sc.keyword=${q}&locKeyword=${loc}&fromAge=${fromAge}`;
+}
+
+// Build Stepstone search URL with what/where parameters
+function buildStepstoneURL(term, location, recencyHours = 24) {
+  const q = encodeURIComponent(term);
+  const loc = encodeURIComponent(location);
+  const freshness = recencyHours <= 24 ? 1 : 7; // days
+  return `https://www.stepstone.de/jobs?what=${q}&where=${loc}&radius=0&freshness=${freshness}`;
+}
+
 function nowBerlin() {
   return DateTime.now().setZone(ZONE);
 }
@@ -53,18 +69,17 @@ function normalizePostingTime(raw) {
   return nowBerlin().toISO();
 }
 
-function extractJobsFromHTML(html, keyword) {
+function extractLinkedInJobs(html, keyword) {
   const $ = cheerio.load(html);
   const jobs = [];
 
-  // LinkedIn public job results best-effort selectors
   $('ul.jobs-search__results-list li').each((_, el) => {
     const title = $(el).find('h3').first().text().trim() || $(el).find('.base-search-card__title').text().trim();
     const company = $(el).find('.base-search-card__subtitle').text().trim();
     const location = $(el).find('.job-search-card__location').text().trim();
     const snippet = $(el).find('.base-search-card__snippet').text().trim() || '';
     const timeRaw = $(el).find('time').attr('datetime') || $(el).find('time').text().trim();
-
+    const url = $(el).find('a').attr('href');
     if (!title) return;
     jobs.push({
       portal: 'LinkedIn',
@@ -72,12 +87,12 @@ function extractJobsFromHTML(html, keyword) {
       title,
       company,
       location,
+      url,
       description_snippet: snippet,
       posting_time: normalizePostingTime(timeRaw)
     });
   });
 
-  // Fallback alternative structure
   if (jobs.length === 0) {
     $('.base-card').each((_, el) => {
       const title = $(el).find('.base-card__title').text().trim();
@@ -85,6 +100,7 @@ function extractJobsFromHTML(html, keyword) {
       const location = $(el).find('.job-search-card__location').text().trim();
       const snippet = $(el).find('.base-card__snippet').text().trim() || '';
       const timeRaw = $(el).find('time').attr('datetime') || $(el).find('time').text().trim();
+      const url = $(el).find('a').attr('href');
       if (!title) return;
       jobs.push({
         portal: 'LinkedIn',
@@ -92,12 +108,65 @@ function extractJobsFromHTML(html, keyword) {
         title,
         company,
         location,
+        url,
         description_snippet: snippet,
         posting_time: normalizePostingTime(timeRaw)
       });
     });
   }
 
+  return jobs;
+}
+
+function extractGlassdoorJobs(html, keyword) {
+  const $ = cheerio.load(html);
+  const jobs = [];
+  $('.react-job-listing, li.jobListing, article.jobListItem').each((_, el) => {
+    const title = $(el).find('a.jobLink').text().trim() || $(el).find('.job-title').text().trim();
+    const company = $(el).find('.jobEmpolyerName').text().trim() || $(el).find('.jobInfoItem.jobEmpolyerName').text().trim();
+    const location = $(el).find('.jobInfoItem.empLoc').text().trim() || $(el).find('.location').text().trim();
+    const snippet = $(el).find('.job-snippet').text().trim();
+    const timeRaw = $(el).find('div[data-test="job-age"]').text().trim();
+    let url = $(el).find('a.jobLink').attr('href') || '';
+    if (url && !url.startsWith('http')) url = 'https://www.glassdoor.com' + url;
+    if (!title) return;
+    jobs.push({
+      portal: 'Glassdoor',
+      keyword,
+      title,
+      company,
+      location,
+      url,
+      description_snippet: snippet,
+      posting_time: normalizePostingTime(timeRaw)
+    });
+  });
+  return jobs;
+}
+
+function extractStepstoneJobs(html, keyword) {
+  const $ = cheerio.load(html);
+  const jobs = [];
+  $('.resultlist .result, article[data-at="job-item"]').each((_, el) => {
+    const title = $(el).find('h2, h3').text().trim();
+    const company = $(el).find('.resultlist-content__subtitle, .listing__subtitle').text().trim();
+    const location = $(el).find('.resultlist-content__location, .listing__location').text().trim();
+    const snippet = $(el).find('.resultlist-content__description, .listing__description').text().trim();
+    const timeRaw = $(el).find('time').attr('datetime') || $(el).find('.resultlist-content__date').text().trim();
+    let url = $(el).find('a').attr('href') || '';
+    if (url && !url.startsWith('http')) url = 'https://www.stepstone.de' + url;
+    if (!title) return;
+    jobs.push({
+      portal: 'Stepstone',
+      keyword,
+      title,
+      company,
+      location,
+      url,
+      description_snippet: snippet,
+      posting_time: normalizePostingTime(timeRaw)
+    });
+  });
   return jobs;
 }
 
@@ -119,8 +188,8 @@ function isRepeat(job) {
 function insertJob(job) {
   const stmt = db.prepare(
     `INSERT INTO Job
-     (portal, keyword, title, company, location, description_snippet, posting_time, scrape_time, is_repeat)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     (portal, keyword, title, company, location, description_snippet, posting_time, scrape_time, is_repeat, url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const scrape_time = nowBerlin().toISO();
   const is_repeat = isRepeat(job) ? 1 : 0;
@@ -133,7 +202,8 @@ function insertJob(job) {
     job.description_snippet || null,
     job.posting_time,
     scrape_time,
-    is_repeat
+    is_repeat,
+    job.url || null
   );
 }
 
@@ -170,9 +240,21 @@ async function runScrapeOnce() {
 
   for (const p of portals) {
     const terms = keywordsByPortal[p.id] || [];
-    if (p.provider !== 'LinkedIn') continue; // currently only LinkedIn supported
     for (const term of terms) {
-        const url = buildLinkedInURL(term, p.location, recencyHours);
+      let url;
+      let extractor;
+      if (p.provider === 'LinkedIn') {
+        url = buildLinkedInURL(term, p.location, recencyHours);
+        extractor = extractLinkedInJobs;
+      } else if (p.provider === 'Glassdoor') {
+        url = buildGlassdoorURL(term, p.location, recencyHours);
+        extractor = extractGlassdoorJobs;
+      } else if (p.provider === 'Stepstone') {
+        url = buildStepstoneURL(term, p.location, recencyHours);
+        extractor = extractStepstoneJobs;
+      } else {
+        continue;
+      }
       try {
         const headers = {
           'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36',
@@ -193,11 +275,11 @@ async function runScrapeOnce() {
         }
         await incSuccess(1);
         const html = await resp.text();
-        const parsed = extractJobsFromHTML(html, term);
+        const parsed = extractor(html, term);
         for (const j of parsed) {
           insertJob(j);
         }
-        console.log(`[scraper] LinkedIn (${recencyHours}h) "${term}" @ ${p.location} => inserted ${parsed.length}`);
+        console.log(`[scraper] ${p.provider} (${recencyHours}h) "${term}" @ ${p.location} => inserted ${parsed.length}`);
       } catch (e) {
         console.error(`[scraper] Error scraping ${url}`, e && e.message ? e.message : e);
         await incFailure(1);

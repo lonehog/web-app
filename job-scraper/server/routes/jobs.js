@@ -70,9 +70,9 @@ router.get('/', (req, res) => {
 
     const rows = db
       .prepare(`
-        SELECT id, portal, keyword, title, company, location, description_snippet, posting_time, scrape_time, is_repeat
+        SELECT id, portal, keyword, title, company, location, url, description_snippet, posting_time, scrape_time, is_repeat
         FROM Job
-        WHERE ${where}
+        WHERE ${where} AND is_repeat = 0
         ORDER BY scrape_time DESC
         LIMIT ? OFFSET ?
       `)
@@ -114,7 +114,7 @@ router.get('/highlighted', (req, res) => {
     const sevenDaysAgo = nowBerlin().minus({ days: 7 }).startOf('day').toISO();
     const rows = db
       .prepare(`
-        SELECT id, portal, keyword, title, company, location, description_snippet, posting_time, scrape_time, is_repeat
+        SELECT id, portal, keyword, title, company, location, url, description_snippet, posting_time, scrape_time, is_repeat
         FROM Job
         WHERE is_repeat = 1 AND scrape_time >= ?
         ORDER BY scrape_time DESC
