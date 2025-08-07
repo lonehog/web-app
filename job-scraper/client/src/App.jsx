@@ -12,7 +12,6 @@ export default function App() {
           <Link to="/">Home</Link>
           <Link to="/portals">Portals</Link>
           <Link to="/jobs">Jobs</Link>
-          <Link to="/credentials">Credentials</Link>
           <ThemeToggle className="ml-2" />
         </div>
       </nav>

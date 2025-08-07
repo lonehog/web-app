@@ -10,8 +10,7 @@
     "server:dev": "nodemon server/index.js",
     "client:build": "npm --prefix client run build",
     "dev": "concurrently \"npm:server:dev\" \"npm --prefix client run dev\"",
-    "migrate": "node -e \"require('./server/db').migrate()\"",
-    "create-admin": "node -e \"require('./server/index').promptCreateAdmin && require('./server/index').promptCreateAdmin()\""
+    "migrate": "node -e \"require('./server/db').migrate()\""
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

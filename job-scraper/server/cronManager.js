@@ -1,5 +1,5 @@
 const db = require("./db");
-const runScrape = require("./scraper/run-scrape");
+const { runScrapeWithRetry } = require("./scraper/scraper");
 
 class CronManager {
   constructor() {
@@ -134,7 +134,7 @@ class CronManager {
     await db.run("UPDATE cron_state SET is_running=1 WHERE id=1");
 
     try {
-      await runScrape();
+      await runScrapeWithRetry();
       const nowIso = new Date().toISOString();
       await db.run("UPDATE cron_state SET last_run_at=? WHERE id=1", [nowIso]);
 

@@ -6,26 +6,6 @@ const dbApi = require('../db');
 
 const ZONE = 'Europe/Berlin';
 
-function loadProviderCredentials(provider) {
-  const row = db.prepare('SELECT data FROM PortalCredential WHERE provider = ?').get(provider);
-  if (!row) return { data: {}, recencyHours: 24 };
-  let parsed = {};
-  try { parsed = JSON.parse(row.data || '{}'); } catch (_) {}
-  const recencyHours = parsed.recencyHours === 1 ? 1 : 24;
-  return { data: parsed, recencyHours };
-}
-
-function buildLinkedInCookieHeader(data) {
-  const parts = [];
-  if (data.LINKEDIN_LI_AT) parts.push(`li_at=${data.LINKEDIN_LI_AT}`);
-  if (data.LINKEDIN_JSESSIONID) parts.push(`JSESSIONID="${data.LINKEDIN_JSESSIONID}"`);
-  if (data.LINKEDIN_LIAP) parts.push(`liap=${data.LINKEDIN_LIAP}`);
-  if (data.LINKEDIN_LIDC) parts.push(`lidc=${data.LINKEDIN_LIDC}`);
-  if (data.LINKEDIN_BCOOKIE) parts.push(`bcookie=${data.LINKEDIN_BCOOKIE}`);
-  if (data.LINKEDIN_BSCOOKIE) parts.push(`bscookie=${data.LINKEDIN_BSCOOKIE}`);
-  return parts.join('; ');
-}
-
 // Build LinkedIn search URL with recencyHours (1 -> r3600, 24 -> r86400)
 function buildLinkedInURL(term, location, recencyHours = 1) {
   const q = encodeURIComponent(term);
@@ -186,11 +166,7 @@ async function runScrapeOnce() {
     return acc;
   }, {});
 
-  // Load LinkedIn credentials once
-  const liCred = loadProviderCredentials('LinkedIn');
-  const cookieHeader = buildLinkedInCookieHeader(liCred.data);
-  const hasCreds = cookieHeader.length > 0;
-  const recencyHours = liCred.recencyHours;
+  const recencyHours = 24;
 
   for (const p of portals) {
     const terms = keywordsByPortal[p.id] || [];
@@ -202,7 +178,6 @@ async function runScrapeOnce() {
           'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36',
           'Accept-Language': 'en-US,en;q=0.9'
         };
-        if (hasCreds) headers.Cookie = cookieHeader;
 
         // Count the outbound API request
         await incTotal(1);
@@ -212,7 +187,7 @@ async function runScrapeOnce() {
           timeout: 20000
         });
         if (!resp.ok) {
-          console.error(`[scraper] Fetch failed ${resp.status} for ${url} (creds: ${hasCreds ? 'yes' : 'no'})`);
+          console.error(`[scraper] Fetch failed ${resp.status} for ${url}`);
           await incFailure(1);
           continue;
         }

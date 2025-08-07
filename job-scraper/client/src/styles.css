@@ -13,7 +13,7 @@
 
   /* Gradients and shadows */
   --accent-grad: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #0e7a3a 100%);
-  --bg-grad: radial-gradient(1000px 600px at 20% 10%, rgba(22,163,74,0.07) 0%, rgba(22,163,74,0) 60%), linear-gradient(0deg, #ffffff, #f8fafb 60%);
+  --bg-grad: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
   --shadow-1: 0 1px 2px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08);
   --border: #e6edf1;
 }
@@ -32,7 +32,7 @@
   --card: #0e171c;
 
   --accent-grad: linear-gradient(135deg, #34d399 0%, #22c55e 50%, #16a34a 100%);
-  --bg-grad: radial-gradient(1000px 600px at 20% 10%, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0) 60%), linear-gradient(0deg, #0b1215, #0e171c 60%);
+  --bg-grad: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   --shadow-1: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.35);
   --border: #1f2a30;
 }
