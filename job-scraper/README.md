@@ -10,6 +10,14 @@ A full-stack job-scraping web application.
 - Time Zone: Europe/Berlin for all timestamps
 - Providers: LinkedIn, Glassdoor and Stepstone
 
+## Scraping Window
+
+- LinkedIn supports filtering by postings from the last hour and uses the
+  `r3600` search parameter.
+- Glassdoor and Stepstone do not support an "hourly" filter. The scraper
+  requests the last 24 hours from these providers and then keeps only jobs
+  whose posting time appears within the previous hour.
+
 ## Quick Start (Docker)
 
 1) Build and run with docker-compose:
