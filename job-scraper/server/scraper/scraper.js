@@ -236,14 +236,18 @@ async function runScrapeOnce() {
     return acc;
   }, {});
 
-  const recencyHours = 24;
-
   for (const p of portals) {
     const terms = keywordsByPortal[p.id] || [];
     for (const term of terms) {
       let url;
       let extractor;
+      // LinkedIn can filter to the last hour directly (r3600)
+      // whereas Glassdoor and Stepstone can only filter to the last 24 hours.
+      // We therefore request 24h for those portals and later filter the
+      // results down to postings from the last hour.
+      let recencyHours = 24;
       if (p.provider === 'LinkedIn') {
+        recencyHours = 1;
         url = buildLinkedInURL(term, p.location, recencyHours);
         extractor = extractLinkedInJobs;
       } else if (p.provider === 'Glassdoor') {
@@ -275,7 +279,20 @@ async function runScrapeOnce() {
         }
         await incSuccess(1);
         const html = await resp.text();
-        const parsed = extractor(html, term);
+        let parsed = extractor(html, term);
+
+        // For Glassdoor and Stepstone we only keep jobs that appear to have
+        // been posted within the last hour. The portals themselves only allow
+        // searching within the last 24 hours, so we post-filter using the
+        // normalized posting_time.
+        if (p.provider === 'Glassdoor' || p.provider === 'Stepstone') {
+          const cutoff = nowBerlin().minus({ hours: 1 });
+          parsed = parsed.filter((j) => {
+            const pt = DateTime.fromISO(j.posting_time, { zone: ZONE });
+            return pt.isValid && pt >= cutoff;
+          });
+        }
+
         for (const j of parsed) {
           insertJob(j);
         }
